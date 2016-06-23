@@ -1,0 +1,108 @@
+{% extends "uibase.html" %}
+
+{% block head %}
+<style type="text/css">
+body { padding-top: 60px; }
+.bookmarks li { margin-bottom: 10px; }
+.tag {  cursor: pointer; background-color: #BFBFBF; padding: 1px 3px 2px; border-radius: 3px; color: white; text-decoration: none; font-size: 9.75px;}
+</style>
+<script type="text/javascript" src="/static/jquery.ba-bbq.min.js"></script>
+<script type="text/javascript" src="/static/jquery.cookie.js"></script>
+<script type="text/javascript">
+
+	var qs = $.deparam.querystring();
+	qs[ "skip" ] = qs[ "skip" ] ? parseInt( qs[ "skip" ] ) : 0;
+	var bookmarks_per_page = $.cookie( "bookmarks_per_page" ) ? parseInt( $.cookie( "bookmarks_per_page" ) ) : 10;
+
+	function tagsbm( tag ) {
+		$( "#tags" ).val( $( tag ).text() );
+		return sbm( 0, "tags" );
+	}
+
+	function fixnav() {
+		$( "#first" ).prop( 'disabled', qs[ "skip" ] == 0 );
+		$( "#prev" ).prop( 'disabled', qs[ "skip" ] == 0 );
+		$( "#next" ).prop( 'disabled', $("#content li").length < bookmarks_per_page );
+	}
+
+	function sbm( skip, field ) {
+		if ( field != undefined ) {
+			var value = $( "#" + field ).val();
+				qs[ field ] = value == "" ? undefined : value;
+		}
+		if ( skip == 0 ) qs[ "skip" ] = 0;
+		else if ( skip == 1 ) qs[ "skip" ] += bookmarks_per_page;
+		else qs[ "skip" ] -= bookmarks_per_page;
+		qs[ "content_only" ] = "true";
+		$.get( $.param.querystring( "", qs ), function( data ) {
+			$( "#content" ).html( data );
+			fixnav();
+		} );
+		return false;
+	}
+
+	$( document ).ready( function() {
+
+		$( "#tags" ).val( qs[ "tags" ] );
+		$( "#tags" ).change( function() { sbm( 0, "tags" ); } );
+		$( '#tags' ).keypress( function( e ) { if ( e.which == 13 ) { return sbm( 0, "tags" ); } } );
+		$( "#clear_tags" ).click( function() { $( "#tags" ).val( "" ); return sbm( 0, "tags" ); } );
+
+		$( "#title" ).val( qs[ "title" ] );
+		$( "#title" ).change( function() { sbm( 0, "title" ); } );
+		$( '#title' ).keypress( function( e ) { if ( e.which == 13 ) { return sbm( 0, "title" ); } } );
+		$( "#clear_title" ).click( function() { $( "#title" ).val( "" ); return sbm( 0, "title" ); } );
+
+		fixnav();
+		$( "#first" ).click( function() { return sbm( 0 ); } );
+		$( "#prev" ).click( function() { return sbm( -1 ); } );
+		$( "#next" ).click( function() { return sbm( +1 ); } );
+
+	} );
+</script>
+{% endblock %}
+
+{% block sidebar %}
+	<h1>Filter</h1>
+	
+	<form action="" method="GET" id="filters" class="form-stacked">
+		<div class="clearfix">
+			<label>Tags</label>
+			<div class="input-append">
+				<input class="span3" type="text" id="tags"/>
+				<label class="add-on" id="clear_tags"><p style="color:black">x</p></label>
+			</div>
+		</div><!-- /clearfix -->
+		<div class="clearfix">
+			<label>Title</label>
+			<div class="input-append">
+				<input class="span3" type="text" id="title"/>
+				<label class="add-on" id="clear_title"><p style="color:black">x</p></label>
+			</div>
+		</div><!-- /clearfix -->
+		<div class="clearfix">
+			<label>Navigation</label>
+			<div class="input" style="padding-top: 10px;">
+				<button class="btn" id="first">⇤</button> <button class="btn" id="prev">←</button> <button class="btn" id="next">→</button>
+			</div>
+		</div>
+	</form>
+	
+	{% if top_tags %}
+	<h1>Top tags</h1>
+	<p>
+	{% for tag, count in top_tags[ : 100 ] %}
+		<span class="tag" onclick="tagsbm( this )">{{ tag }}</span> <small>{{ count|int }}</small>
+	{% endfor %}
+	</p>
+	{% endif %}
+{% endblock %}	
+
+{% block content %}
+		<div class="page-header">
+			<h1>Bookmarks</h1>
+		</div>
+		<ul class="bookmarks unstyled">
+		<div id="content">{% include "list-content.html" %}</div>
+		</ul>
+{% endblock %}	
