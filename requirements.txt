@@ -1,0 +1,4 @@
+Flask
+gunicorn
+pymongo
+https://github.com/hbldh/flask-pymongo/archive/feature/connect-option.zip
